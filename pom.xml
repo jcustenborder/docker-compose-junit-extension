@@ -26,10 +26,10 @@
         <version>1.0.0.0</version>
     </parent>
     <groupId>com.github.jcustenborder</groupId>
-    <artifactId>compose-compose-junit-extension</artifactId>
+    <artifactId>docker-compose-junit-extension</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>compose-compose-junit-extension</name>
-    <url>https://github.com/jcustenborder/compose-compose-junit-extension</url>
+    <name>docker-compose-junit-extension</name>
+    <url>https://github.com/jcustenborder/docker-compose-junit-extension</url>
     <inceptionYear>2017</inceptionYear>
     <licenses>
         <license>
@@ -49,13 +49,13 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/jcustenborder/compose-compose-junit-extension.git</connection>
-        <developerConnection>scm:git:git@github.com:jcustenborder/compose-compose-junit-extension.git</developerConnection>
-        <url>https://github.com/jcustenborder/compose-compose-junit-extension</url>
+        <connection>scm:git:https://github.com/jcustenborder/docker-compose-junit-extension.git</connection>
+        <developerConnection>scm:git:git@github.com:jcustenborder/docker-compose-junit-extension.git</developerConnection>
+        <url>https://github.com/jcustenborder/docker-compose-junit-extension</url>
     </scm>
     <issueManagement>
         <system>github</system>
-        <url>https://github.com/jcustenborder/compose-compose-junit-extension/issues</url>
+        <url>https://github.com/jcustenborder/docker-compose-junit-extension/issues</url>
     </issueManagement>
     <properties>
         <slf4j.version>1.7.21</slf4j.version>
