@@ -29,11 +29,8 @@ import java.net.URL;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-
-
-@Compose(dockerComposePath = "src/test/resources/docker-compose.yml")
-public class SimpleTest {
-  private static final Logger log = LoggerFactory.getLogger(SimpleTest.class);
+public abstract class BaseTest {
+  private static final Logger log = LoggerFactory.getLogger(BaseTest.class);
 
   @Test
   public void host(@Host String host) {

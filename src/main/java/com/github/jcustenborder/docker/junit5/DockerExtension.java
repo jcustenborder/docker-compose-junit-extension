@@ -37,7 +37,9 @@ import com.palantir.docker.compose.logging.FileLogCollector;
 import com.palantir.docker.compose.logging.LogCollector;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -57,10 +59,9 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 
-public class DockerExtension implements BeforeAllCallback, AfterAllCallback, ParameterResolver {
+public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback, ParameterResolver {
   private static final Logger log = LoggerFactory.getLogger(DockerExtension.class);
 
   private static Compose findDockerComposeAnnotation(ExtensionContext extensionContext) {
@@ -118,11 +119,20 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
     });
   }
 
-  private LogCollector logCollector(Optional<Class<?>> testClass, ExtensionContext.Store store, Compose compose) {
+  private LogCollector logCollector(ExtensionContext extensionContext, Class<?> testClass, ExtensionContext.Store store, Compose compose) {
     return getOrBuild(LogCollector.class, store, compose, () -> {
-      File logPathRoot = new File(compose.logRootPath());
-      File testClassLogPath = new File(logPathRoot, testClass.get().getName());
-      return FileLogCollector.fromPath(testClassLogPath.getAbsolutePath());
+      final File logPathRoot = new File(compose.logRootPath());
+      final File testClassLogPath = new File(logPathRoot, testClass.getName());
+      final File testOutputPath;
+
+      if (CleanupMode.AfterEach == compose.cleanupMode()) {
+        testOutputPath = new File(testClassLogPath, extensionContext.getDisplayName());
+      } else {
+        testOutputPath = testClassLogPath;
+      }
+
+
+      return FileLogCollector.fromPath(testOutputPath.getAbsolutePath());
     });
   }
 
@@ -169,16 +179,13 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
     return new ClusterWait(result, Duration.standardSeconds(compose.clusterHealthCheckTimeout()));
   }
 
-  @Override
-  public void beforeAll(ExtensionContext extensionContext) throws Exception {
-    final Optional<Class<?>> testClass = extensionContext.getTestClass();
+  void before(ExtensionContext extensionContext, Class<?> testClass, Compose compose) throws Exception {
     final ExtensionContext.Namespace namespace = namespace(extensionContext);
-    final Compose compose = findDockerComposeAnnotation(extensionContext);
     ExtensionContext.Store store = extensionContext.getStore(namespace);
 
     DockerCompose dockerCompose = dockerCompose(store, compose);
 
-    LogCollector logCollector = logCollector(testClass, store, compose);
+    LogCollector logCollector = logCollector(extensionContext, testClass, store, compose);
     dockerCompose.build();
     dockerCompose.up();
 
@@ -198,21 +205,57 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
   }
 
   @Override
-  public void afterAll(ExtensionContext extensionContext) throws Exception {
-    final Optional<Class<?>> testClass = extensionContext.getTestClass();
+  public void beforeAll(ExtensionContext extensionContext) throws Exception {
+    final Class<?> testClass = extensionContext.getTestClass().get();
+    final Compose compose = findDockerComposeAnnotation(extensionContext);
+
+    if (CleanupMode.AfterAll == compose.cleanupMode()) {
+      before(extensionContext, testClass, compose);
+    }
+  }
+
+
+  void after(ExtensionContext extensionContext, Class<?> testClass, Compose compose) throws Exception {
     ExtensionContext.Namespace namespace = namespace(extensionContext);
     ExtensionContext.Store store = extensionContext.getStore(namespace);
-    Compose compose = findDockerComposeAnnotation(extensionContext);
-
     DockerCompose dockerCompose = dockerCompose(store, compose);
     Docker docker = docker(store, compose);
-    LogCollector collector = logCollector(testClass, store, compose);
+    LogCollector collector = logCollector(extensionContext, testClass, store, compose);
     collector.stopCollecting();
     try {
       ShutdownStrategy.KILL_DOWN.shutdown(dockerCompose, docker);
-
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException("Error cleaning up docker compose cluster", e);
+    }
+  }
+
+  @Override
+  public void afterAll(ExtensionContext extensionContext) throws Exception {
+    final Class<?> testClass = extensionContext.getTestClass().get();
+    Compose compose = findDockerComposeAnnotation(extensionContext);
+
+    if (CleanupMode.AfterAll == compose.cleanupMode()) {
+      after(extensionContext, testClass, compose);
+    }
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext extensionContext) throws Exception {
+    final Class<?> testClass = extensionContext.getTestClass().get();
+    final Compose compose = findDockerComposeAnnotation(extensionContext);
+
+    if (CleanupMode.AfterEach == compose.cleanupMode()) {
+      before(extensionContext, testClass, compose);
+    }
+  }
+
+  @Override
+  public void afterEach(ExtensionContext extensionContext) throws Exception {
+    final Class<?> testClass = extensionContext.getTestClass().get();
+    Compose compose = findDockerComposeAnnotation(extensionContext);
+
+    if (CleanupMode.AfterEach == compose.cleanupMode()) {
+      after(extensionContext, testClass, compose);
     }
   }
 
@@ -242,7 +285,6 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
     final Compose compose = findDockerComposeAnnotation(extensionContext);
     final Class<?> parameterType = parameterContext.getParameter().getType();
 
-    DockerCompose dockerCompose = dockerCompose(store, compose);
     DockerMachine dockerMachine = dockerMachine(store, compose);
     Cluster cluster = cluster(store, compose);
 
@@ -344,4 +386,6 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
       return null;
     }
   }
+
+
 }

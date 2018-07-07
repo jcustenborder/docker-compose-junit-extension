@@ -64,4 +64,11 @@ public @interface Compose {
    * @return The number of tries before failing the test and cleaning up.
    */
   int retryAttempts() default 2;
+
+  /**
+   * The cleanup mode to use for the docker containers.
+   * @return The cleanup mode to use for the docker containers.
+   * @see CleanupMode
+   */
+  CleanupMode cleanupMode() default CleanupMode.AfterAll;
 }
