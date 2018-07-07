@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.jcustenborder.junit5;
+package com.github.jcustenborder.docker.junit5;
 
 import com.palantir.docker.compose.connection.waiting.ClusterHealthCheck;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,35 +23,45 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation is used to mark a test class with tests using a docker compose file.
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(DockerExtension.class)
 public @interface Compose {
   /**
-   * Location of the docker-compose.yml file to use.
+   * Relative path to the docker-compose.yml file to use.
    *
-   * @return
+   * @return Relative path to the docker-compose.yml file to use.
    */
   String dockerComposePath();
 
   /**
-   * Root location to output the logs to.
+   * Relative path to write the logs to.
    *
-   * @return
+   * @return Relative path to write the logs to.
    */
   String logRootPath() default "target/docker-compose";
 
   /**
    * Health check class used to check the health of the cluster.
    *
-   * @return
+   * @return Health check class used to check the health of the cluster.
    */
   Class<? extends ClusterHealthCheck> clusterHealthCheck() default NullClusterHealthCheck.class;
 
   /**
-   * @return
+   * The timeout it seconds to wait until the cluster is healthy.
+   *
+   * @return The timeout it seconds to wait until the cluster is healthy.
    */
   int clusterHealthCheckTimeout() default 120;
 
+  /**
+   * The number of tries before failing the test and cleaning up.
+   *
+   * @return The number of tries before failing the test and cleaning up.
+   */
   int retryAttempts() default 2;
 }

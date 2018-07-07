@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.jcustenborder.junit5;
+package com.github.jcustenborder.docker.junit5;
 
-import com.palantir.docker.compose.connection.Cluster;
-import com.palantir.docker.compose.connection.waiting.ClusterHealthCheck;
-import com.palantir.docker.compose.connection.waiting.SuccessOrFailure;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.util.Optional;
+/**
+ * This annotation is used to pass in a Cluster as a parameter.
+ *
+ * @see com.palantir.docker.compose.connection.Cluster
+ */
+@Target({ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DockerCluster {
 
-class NullClusterHealthCheck implements ClusterHealthCheck {
-  @Override
-  public SuccessOrFailure isClusterHealthy(Cluster cluster) {
-    return new SuccessOrFailure() {
-      @Override
-      protected Optional<String> optionalFailureMessage() {
-        return Optional.empty();
-      }
-    };
-  }
 }

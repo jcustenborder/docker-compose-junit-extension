@@ -19,7 +19,7 @@ public class SimpleTest {
 
   @Test
   public void port(@Port(container = "nginx", port = 80) int port) {
-    log.info("port = {}", port);
+    log.info(internalPort, port);
     assertFalse(0 == port);
   }
 

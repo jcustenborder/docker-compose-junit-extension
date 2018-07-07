@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.jcustenborder.junit5;
+package com.github.jcustenborder.docker.junit5;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -47,10 +47,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -211,14 +216,23 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
     }
   }
 
+  static final List<Class<? extends Annotation>> ANNOTATIONS = Arrays.asList(
+      FormatString.class,
+      DockerContainer.class,
+      Port.class,
+      Host.class,
+      DockerCluster.class
+  );
 
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    return
-        parameterContext.isAnnotated(FormatString.class) ||
-            parameterContext.isAnnotated(DockerContainer.class) ||
-            parameterContext.isAnnotated(Port.class) ||
-            parameterContext.isAnnotated(Host.class);
+    for (Class<? extends Annotation> a : ANNOTATIONS) {
+      if (parameterContext.isAnnotated(a)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   @Override
@@ -256,7 +270,17 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
       return dockerFormatString(parameterType, cluster, formatString);
     }
 
+    final DockerCluster dockerCluster = parameterContext.getParameter().getAnnotation(DockerCluster.class);
+
+    if (null != dockerCluster) {
+      return dockerCluster(parameterType, cluster);
+    }
+
     return null;
+  }
+
+  private Object dockerCluster(Class<?> parameterType, Cluster cluster) {
+    return cluster;
   }
 
   private Object dockerHost(Class<?> parameterType, DockerMachine dockerMachine, Host host) {
@@ -276,8 +300,8 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
   private Object dockerPort(Class<?> parameterContext, Cluster cluster, Port port) {
     Container container = cluster.container(port.container());
     Preconditions.checkNotNull(container, "Could not find container '%s'", port.container());
-    DockerPort dockerPort = container.port(port.port());
-    Preconditions.checkNotNull(container, "Could not find port '%s' for container '%s'", port.port(), port.container());
+    DockerPort dockerPort = container.port(port.internalPort());
+    Preconditions.checkNotNull(container, "Could not find internalPort '%s' for container '%s'", port.internalPort(), port.container());
 
     if (InetSocketAddress.class.isAssignableFrom(parameterContext)) {
       return InetSocketAddress.createUnresolved(
@@ -302,8 +326,22 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback, Par
   private Object dockerFormatString(Class<?> parameterContext, Cluster cluster, FormatString formatString) {
     Container container = cluster.container(formatString.container());
     Preconditions.checkNotNull(container, "Could not find container '%s'", formatString.container());
-    DockerPort port = container.port(formatString.port());
-    Preconditions.checkNotNull(container, "Could not find port '%s' for container '%s'", formatString.port(), formatString.container());
-    return port.inFormat(formatString.format());
+    DockerPort port = container.port(formatString.internalPort());
+    Preconditions.checkNotNull(container, "Could not find internalPort '%s' for container '%s'", formatString.internalPort(), formatString.container());
+    final String format = port.inFormat(formatString.format());
+
+    if (String.class.equals(parameterContext)) {
+      return format;
+    } else if (URI.class.equals(parameterContext)) {
+      return URI.create(format);
+    } else if (URL.class.equals(parameterContext)) {
+      try {
+        return new URL(format);
+      } catch (MalformedURLException e) {
+        throw new ParameterResolutionException("Could not create URL", e);
+      }
+    } else {
+      return null;
+    }
   }
 }

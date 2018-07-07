@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.jcustenborder.junit5;
+package com.github.jcustenborder.docker.junit5;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation is used to pass in a docker Container as a parameter.
+ *
+ * @see com.palantir.docker.compose.connection.Container
+ */
 @Target({ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DockerContainer {
+  /**
+   * Docker container to search for.
+   * @return Docker container to search for.
+   */
   String container();
 }
