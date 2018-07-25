@@ -20,6 +20,7 @@ import com.palantir.docker.compose.connection.Container;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.nio.ch.Net;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -59,6 +60,7 @@ public abstract class BaseTest {
   @Test
   public void port(@Port(container = "nginx", internalPort = 80) InetSocketAddress address) {
     log.info("internalPort(InetSocketAddress) - address = {}", address);
+    Net.checkAddress(address);
     assertNotNull(address);
   }
 

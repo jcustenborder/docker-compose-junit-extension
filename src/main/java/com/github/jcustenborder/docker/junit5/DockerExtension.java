@@ -346,10 +346,12 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
     Preconditions.checkNotNull(container, "Could not find internalPort '%s' for container '%s'", port.internalPort(), port.container());
 
     if (InetSocketAddress.class.isAssignableFrom(parameterContext)) {
-      return InetSocketAddress.createUnresolved(
-          cluster.ip(),
-          dockerPort.getExternalPort()
-      );
+      try {
+        final InetAddress address = InetAddress.getByName(cluster.ip());
+        return new InetSocketAddress(address, dockerPort.getExternalPort());
+      } catch (UnknownHostException e) {
+        throw new ParameterResolutionException("Could not resolve ip", e);
+      }
     } else if (Integer.class.equals(parameterContext)) {
       return dockerPort.getExternalPort();
     } else if (int.class.equals(parameterContext)) {
