@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import com.palantir.docker.compose.connection.Container;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.nio.ch.Net;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -59,6 +60,7 @@ public abstract class BaseTest {
   @Test
   public void port(@Port(container = "nginx", internalPort = 80) InetSocketAddress address) {
     log.info("internalPort(InetSocketAddress) - address = {}", address);
+    Net.checkAddress(address);
     assertNotNull(address);
   }
 
