@@ -188,8 +188,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
     LogCollector logCollector = logCollector(extensionContext, testClass, store, compose);
     dockerCompose.build();
     dockerCompose.up();
-
-    logCollector.startCollecting(dockerCompose);
+    logCollector.collectLogs(dockerCompose);
 
     Cluster cluster = cluster(store, compose);
     log.debug("Waiting for services");
@@ -221,7 +220,6 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
     DockerCompose dockerCompose = dockerCompose(store, compose);
     Docker docker = docker(store, compose);
     LogCollector collector = logCollector(extensionContext, testClass, store, compose);
-    collector.stopCollecting();
     try {
       ShutdownStrategy.KILL_DOWN.shutdown(dockerCompose, docker);
     } catch (IOException | InterruptedException e) {
